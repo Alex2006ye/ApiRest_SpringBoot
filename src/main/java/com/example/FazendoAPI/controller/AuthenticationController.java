@@ -3,7 +3,11 @@ package com.example.FazendoAPI.controller;
 import com.example.FazendoAPI.dto.AuthDTO;
 import com.example.FazendoAPI.dto.RegisterDTO;
 import com.example.FazendoAPI.model.Pessoa;
+import com.example.FazendoAPI.model.PessoaFuncao;
 import com.example.FazendoAPI.repository.PessoaRepository;
+import com.example.FazendoAPI.service.PessoaService;
+import com.example.FazendoAPI.strategy.CriarPessoaAdmin;
+import com.example.FazendoAPI.strategy.CriarPessoaUser;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,11 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
-    private final PessoaRepository repository;
+    private final PessoaService service;
 
-    public AuthenticationController(AuthenticationManager authenticationManager, PessoaRepository repository) {
+    public AuthenticationController(AuthenticationManager authenticationManager, PessoaService service) {
         this.authenticationManager = authenticationManager;
-        this.repository = repository;
+        this.service = service;
     }
 
     @PostMapping("/login")
@@ -35,16 +39,7 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody RegisterDTO dto){
-        if (repository.findByLogin(dto.login()).isPresent()) { //verifica se já existe no banco de dados salvo esse mesmo cadastro
-            return ResponseEntity.badRequest().build(); // se já existe, manda um 400 de bad request
-        }
-
-        //faz a criptografia da senha para se salvar no banco de dados
-        String encryptedPassword = new BCryptPasswordEncoder().encode(dto.password());
-        Pessoa pessoa = new Pessoa(dto.login(), encryptedPassword, dto.role());
-
-        repository.save(pessoa);
-
+        service.registrar(dto);
         return ResponseEntity.ok().build();
     }
 }
